@@ -39,5 +39,7 @@
 		"types": [
 			"./worker-configuration.d.ts"
 		]
-	}
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["mcp", "node_modules"]
 }
