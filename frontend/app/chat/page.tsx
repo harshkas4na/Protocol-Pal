@@ -356,7 +356,7 @@ export default function ChatPage() {
         userAddress: account?.address || null,
       }
 
-      const response = await fetch("http://localhost:55636/agent/chat", {
+      const response = await fetch("https://intent-parser-agent-iw3xyyes1-harshkasana05-gmailcoms-projects.vercel.app/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -409,7 +409,7 @@ export default function ChatPage() {
         {
           id: Date.now().toString(),
           role: 'assistant',
-          content: "Sorry, I couldn't connect to the backend. Please ensure it's running on http://localhost:55636",
+          content: "Sorry, I couldn't connect to the backend.",
           timestamp: new Date(),
         },
       ])
