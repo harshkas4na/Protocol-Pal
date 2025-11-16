@@ -1,0 +1,134 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated to Mindazzle teal palette: dark teal/navy with sophisticated neutrals */
+  --background: #0e1d21; /* very dark navy (#0E1D21) */
+  --foreground: #f0f4f6; /* light off-white */
+  --secondary-text: #a8b8c1; /* muted blue-gray */
+  --accent: #1d6f7d; /* medium teal (#1D6F7D or #622347 from palette) */
+  --accent-light: #2a9aab; /* lighter teal accent */
+  --accent-hover: #35b5c7; /* hover state teal */
+  --accent-dark: #0e1d21; /* darkest from palette */
+  --card-bg: #162630; /* slightly lighter than background */
+  --card-border: #1f3a48; /* teal-tinted border */
+  --border: #1f3a48;
+  --input: #1a3140;
+  --ring: #2a9aab;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Geist', 'Geist Fallback';
+  --font-serif: 'Georgia', 'Playfair Display', serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-secondary-text: var(--secondary-text);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-dark: var(--accent-dark);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #0e1d21 0%, #162630 50%, #0e1d21 100%);
+  }
+}
+
+/* Updated animations with teal glow for modern aesthetic */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(42, 154, 171, 0.2), 0 0 40px rgba(42, 154, 171, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(42, 154, 171, 0.4), 0 0 60px rgba(42, 154, 171, 0.2);
+  }
+}
+
+@keyframes glow-border {
+  0%, 100% {
+    border-color: rgba(42, 154, 171, 0.3);
+    box-shadow: 0 0 15px rgba(42, 154, 171, 0.1) inset;
+  }
+  50% {
+    border-color: rgba(42, 154, 171, 0.6);
+    box-shadow: 0 0 25px rgba(42, 154, 171, 0.2) inset;
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+.glow-border {
+  animation: glow-border 2.5s ease-in-out infinite;
+}
+
+.shine {
+  background-image: linear-gradient(90deg, transparent 0%, rgba(42, 154, 171, 0.1) 50%, transparent 100%);
+  background-size: 1000px 100%;
+  animation: shine 3s infinite;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Smooth transitions */
+* {
+  @apply transition-all duration-300;
+}
+
+/* Teal glow for accent elements */
+.accent-glow {
+  box-shadow: 0 0 20px rgba(42, 154, 171, 0.2);
+}
+
+.accent-glow:hover {
+  box-shadow: 0 0 30px rgba(42, 154, 171, 0.35);
+}
