@@ -18,7 +18,15 @@ The AI understands the request, prepares the transaction, and executes it on the
 
 ## Demo
 
-https://github.com/user-attachments/assets/your-demo-video
+[![Protocol Pal Demo](https://img.youtube.com/vi/jnlzSNL7hTs/0.jpg)](frontend/public/Live_Demo.mp4)
+
+> **Note:** If the video above doesn't play, you can [download/view it here](frontend/public/Live_Demo.mp4).
+
+### Live Demo
+
+You can try the frontend here: [Live Link](https://protocol-pal-gules.vercel.app/)
+
+> **Note:** The AI agent on the live link is currently **offline** because the backend agent deployment is pending. For the full experience, please run the project locally following the instructions below.
 
 ## Architecture
 

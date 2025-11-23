@@ -456,19 +456,28 @@ export default function ChatPage() {
             </div>
             <div>
               <h1 className="text-lg font-semibold text-slate-100">Protocol Pal</h1>
-              <p className="text-xs text-slate-400">AI Web3 Assistant</p>
+              <p className="text-xs text-slate-400">AI-Powered Web3 Assistant</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="flex-1 md:flex-none">
-              <ConnectButton client={client} chain={sepolia} theme="dark" />
+
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-emerald-400">Sepolia Testnet</span>
             </div>
-            <Link href="/">
-              <Button size="sm" variant="outline" className="border-slate-700 hover:border-indigo-500 hover:bg-slate-800 text-slate-300">
-                <Home size={16} />
-              </Button>
-            </Link>
+            <ConnectButton
+              client={client}
+              chain={sepolia}
+              theme={"dark"}
+            />
           </div>
+        </div>
+
+        {/* Deployment Status Disclaimer */}
+        <div className="px-4 md:px-6 py-2 bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-sm">
+          <p className="text-xs text-amber-200/80 text-center font-medium">
+            ⚠️ Note: The live demo agent is currently offline due to pending backend deployment. Please run locally for full functionality.
+          </p>
         </div>
 
         {/* Messages Area */}

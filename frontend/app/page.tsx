@@ -60,14 +60,14 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled
-            ? 'border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl shadow-xl'
-            : 'border-b border-transparent bg-transparent'
+          ? 'border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl shadow-xl'
+          : 'border-b border-transparent bg-transparent'
           }`}
       >
         <div className="container max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <Sparkles size={20} className="text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 overflow-hidden">
+              <img src="/logo.png" alt="Protocol Pal Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               Protocol Pal
@@ -75,7 +75,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com"
+              href="https://github.com/harshkas4na/Protocol-Pal"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden md:flex text-slate-400 hover:text-slate-200 transition-colors"
@@ -386,8 +386,8 @@ export default function LandingPage() {
         <div className="container max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <Sparkles size={16} className="text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30 overflow-hidden">
+                <img src="/logo.png" alt="Protocol Pal Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                 Protocol Pal
@@ -397,11 +397,8 @@ export default function LandingPage() {
               A NullShot Hacks: Season 0 Submission. Built with NullShot, Edenlayer, and Thirdweb.
             </p>
             <div className="flex items-center gap-4">
-              <a href="https://github.com" className="text-slate-400 hover:text-slate-200 transition-colors">
+              <a href="https://github.com/harshkas4na/Protocol-Pal" className="text-slate-400 hover:text-slate-200 transition-colors">
                 <Github size={20} />
-              </a>
-              <a href="https://twitter.com" className="text-slate-400 hover:text-slate-200 transition-colors">
-                <Twitter size={20} />
               </a>
             </div>
           </div>
