@@ -451,8 +451,8 @@ export default function ChatPage() {
         {/* Header */}
         <div className="px-4 md:px-6 py-4 border-b border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Sparkles size={20} className="text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+              <img src="/logo.png" alt="Protocol Pal Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-lg font-semibold text-slate-100">Protocol Pal</h1>
