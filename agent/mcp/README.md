@@ -1,291 +1,411 @@
-# NullShot Typescript MCP Template
+# Protocol Pal - MCP Server
 
-A template repository for bootstrapping MCPs (Model Context Protocol) for the null-shot/typescript-agent-framework.
+> Model Context Protocol server that gives AI agents the power to execute blockchain transactions.
 
-## Getting Started
+## Overview
 
-### Setup the repository
+This is the **MCP Server** that provides blockchain-related tools to AI agents. It's the core innovation of Protocol Pal - enabling AI agents to interact with smart contracts through structured tools.
 
-**Option A: Use nullshot cli**
+### What This Server Provides
 
+🔧 **Two MCP Tools:**
+1. `check_wallet_balance` - Check ETH and ERC20 token balances
+2. `prepare_natural_language_transaction` - Convert natural language → executable transaction
 
-You can create a new project by following this interactive prompt:
+🌐 **Blockchain Support:**
+- Network: Sepolia Testnet
+- Protocols: Uniswap V2, NFT Drops
+- Tokens: ETH, WETH, USDC, DAI, USDT, LINK, UNI
+
+## Architecture
+
+```
+AI Agent
+    ↓
+MCP Tool Call
+    ↓
+MCP Server (this component)
+    ↓
+Intent Parser Agent (for transaction tool)
+    ↓
+Returns:
+  - Contract address
+  - Function name
+  - Encoded args
+  - ABI
+  - Approval transaction (if needed)
+```
+
+## Tech Stack
+
+- **MCP SDK:** @modelcontextprotocol/sdk 1.17.4
+- **Nullshot MCP:** @nullshot/mcp 0.3.6
+- **Validation:** Zod 3.25.76
+- **Platform:** Cloudflare Workers + Durable Objects
+
+## Quick Start
+
+### Installation
 
 ```bash
-npx @nullshot/cli create mcp
+# Install dependencies
+pnpm install
+
+# No environment variables needed for local development
 ```
 
-**Option B: Use deploy to cloudflare button**
+### Development
 
-The following button will create a new repo in your organization and setup teh CI/CD using Cloudflare:
+```bash
+# Start MCP server with inspector
+pnpm dev
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/null-labs/mcp-template)
+# MCP Inspector will launch on port 6274
+# Worker will run on port 8787
+```
 
-*NOTE: The configuration only needs `npm run deploy` for the Deploy command to work*
+The dev command runs:
+- **MCP Inspector** - Debug tool at http://localhost:6274
+- **Cloudflare Worker** - MCP server at http://localhost:8787
 
-**Option C: Github Template**
+## MCP Tools
 
-1. Click the "Use this template" button at the top of this repository
-2. Clone your new repository
+### Tool 1: `check_wallet_balance`
 
-The above will boostrap a serverless cloudflare compatible MCP Server with the following urls:
+Check native ETH and ERC20 token balances for any wallet.
 
-* /ws - Websocket connection endpoint
-* /sse - SSE connection endpoint
-
-## Features
-
-- **WebSocket Client Support**: Includes official [WebSocket client](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/client/websocket.ts) for real-time bidirectional communication
-- **SSE Client Support**: Includes [Server-Sent Events client](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/src/client/sse.ts) for server-to-client streaming
-- **MCP Inspector**: Debug and monitor your MCP during development
-- **Cloudflare Workers Integration**: Built on Cloudflare Workers for edge computing capabilities
-- **Integration Testing Suite**: Websocket and SSE testing tools to do full integration testing with local miniflare services (D1/KV/etc) for ease of testing features without mocking.
-
-## Available Scripts
-
-- `pnpm run dev`: Runs both the MCP Inspector (port 6274) and Cloudflare Worker (port 8787) concurrently
-- `pnpm start`: Runs only the Cloudflare Worker (port 8787)
-- `pnpm test`: Runs tests with Vitest
-- `pnpm run deploy`: Deploys your MCP to Cloudflare Workers
-- `pnpm run cf-typegen`: Generates TypeScript types for Cloudflare Workers (run this everytime you add new changes to wrangler.jsonc)
-
-## Usage Overview
-
-There are two ways to leverage run an MCP Server with and without Hono for request routing.
-
-### Environment Setup
-
-Optionally you can create a `.dev.vars` which will will bootstrap local [enviornment variables](https://nullshot.ai/en/docs/developers/platform/environment-variables) or [secrets](https://nullshot.ai/en/docs/developers/platform/secret-manager).
-
-When you run `pnpm cf-typegen` it generates `worker-configuration.d.ts` which creates an `Env` class for your code to access cloudflare bindings, env vars, and more.
-
-### McpHonoServerDO Implementation
-
-By default, the template uses `McpHonoServerDO` which combines the MCP server with [Hono](https://hono.dev), a fast and lightweight web framework. This provides a clean routing system and middleware capabilities.
-
-### Customizing Routes with Hono
-
-To add custom HTTP endpoints with `McpHonoServerDO`, extend the `setupRoutes` method:
-
+**Inputs:**
 ```typescript
-export class ExampleMcpServer extends McpHonoServerDO<Env> {
-  // Other methods...
-
-  protected setupRoutes(app: Hono<{ Bindings: Env }>): void {
-    // Call the parent implementation to set up MCP routes
-    super.setupRoutes(app);
-    
-    // Add your custom routes
-    app.get('/api/status', (c) => {
-      return c.json({ status: 'ok' });
-    });
-    
-    app.post('/api/data', async (c) => {
-      const body = await c.req.json();
-      // Process data
-      return c.json({ success: true });
-    });
-  }
+{
+  walletAddress: string,  // Required: Ethereum address
+  tokens?: Array<'WETH' | 'USDC' | 'DAI' | 'USDT' | 'LINK' | 'UNI'>
 }
 ```
 
-### McpServerDO Implementation (Native Cloudflare Routing)
-
-If you need more control over the HTTP request handling, you can directly extend `McpServerDO` instead. This gives you full control over the `fetch` method:
-
-```typescript
-export class CustomMcpServer extends McpServerDO<Env> {
-  // Required abstract method implementations
-  getImplementation(): Implementation {
-    return {
-      name: 'CustomMcpServer',
-      version: '1.0.0',
-    };
-  }
-  
-  configureServer(server: McpServer): void {
-    setupServerTools(server);
-    setupServerResources(server);
-    setupServerPrompts(server);
-  }
-  
-  // Override the fetch method for complete control over routing
-  async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    
-    // Handle custom routes
-    if (path === '/api/custom') {
-      return new Response(JSON.stringify({ custom: true }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+**Output:**
+```json
+{
+  "balances": {
+    "ETH": {
+      "balance": "1.234567",
+      "symbol": "ETH",
+      "decimals": 18
+    },
+    "USDC": {
+      "balance": "100.50",
+      "symbol": "USDC",
+      "decimals": 6,
+      "address": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"
     }
-    
-    // Pass through MCP-related requests to the parent implementation
-    return super.fetch(request);
+  },
+  "walletAddress": "0x1234...",
+  "network": "sepolia"
+}
+```
+
+**Implementation:**
+- Uses direct RPC calls to Alchemy Sepolia endpoint
+- Calls `eth_getBalance` for native ETH
+- Calls `balanceOf()` for each ERC20 token
+- Fetches decimals dynamically
+
+### Tool 2: `prepare_natural_language_transaction`
+
+The main tool - transforms natural language into a complete, signable transaction.
+
+**Inputs:**
+```typescript
+{
+  query: string,        // e.g., "swap 0.01 eth for usdc"
+  userAddress: string   // User's wallet address
+}
+```
+
+**Output:**
+```json
+{
+  "success": true,
+  "requiresApproval": false,
+  "approvalTransaction": null,
+  "transaction": {
+    "contract_key": "UNISWAP_ROUTER",
+    "contract_address": "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008",
+    "function_name": "swapExactETHForTokens",
+    "args": [0, ["0x7b79...", "0x94a9..."], "0xUserAddress", 1234567890],
+    "value": "0.01",
+    "abi": [...]
   }
 }
 ```
 
-This approach is useful when you need to:
-- Handle specific routes with custom logic
-- Implement complex middleware or authentication
-- Intercept or modify requests before they reach the MCP handler
-- Add custom WebSocket or SSE endpoints beyond the standard MCP implementation
-
-### Creating Tools, Resources, and Prompts
-
-The main server implementation is in `src/server.ts` and extends `McpHonoServerDO`:
-
-```typescript
-export class ExampleMcpServer extends McpHonoServerDO<Env> {
-  // Required abstract method implementation
-  getImplementation(): Implementation {
-    return {
-      name: 'ExampleMcpServer',
-      version: '1.0.0',
-    };
-  }
-
-  // Configure server by adding tools, resources, and prompts
-  configureServer(server: McpServer): void {
-    setupServerTools(server);
-    setupServerResources(server);
-    setupServerPrompts(server);
+**For transactions requiring approval:**
+```json
+{
+  "success": true,
+  "requiresApproval": true,
+  "approvalTransaction": {
+    "contract_address": "0xTokenAddress",
+    "function_name": "approve",
+    "args": ["0xUniswapRouter", "100000000"],
+    "value": "0.0",
+    "abi": [...]
+  },
+  "transaction": {
+    "contract_key": "UNISWAP_ROUTER",
+    "function_name": "swapExactTokensForETH",
+    // ...
   }
 }
 ```
 
-To add functionality, use the following modules:
+**Process:**
+1. Calls Intent Parser Agent microservice
+2. Receives JSON with contract/function/args
+3. Replaces placeholders:
+   - `[USER_WALLET_ADDRESS]` → actual address
+   - `[CURRENT_TIMESTAMP_PLUS_600S]` → deadline
+4. Retrieves contract address from mapping
+5. Gets appropriate ABI
+6. Detects if approval needed (token → ETH/token swaps)
+7. Creates approval transaction if needed
+8. Returns complete transaction data
 
-1. **Tools** (`src/tools.ts`): Define functions that clients can call
+## Supported Contracts
+
+### Uniswap V2 Router (Sepolia)
+
+**Address:** `0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008`
+
+**Functions:**
+- `swapExactETHForTokens` - Swap ETH → Token
+- `swapExactTokensForETH` - Swap Token → ETH (requires approval)
+- `swapExactTokensForTokens` - Swap Token → Token (requires approval)
+
+### NFT Drop Contract
+
+**Address:** `0x12f8e37677b8934FE4F21E1fE87e18152408e77d`
+
+**Functions:**
+- `claim` - Mint NFTs (free on testnet)
+
+## Token Addresses (Sepolia)
+
+| Token | Address | Decimals |
+|-------|---------|----------|
+| WETH | `0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9` | 18 |
+| USDC | `0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8` | 6 |
+| DAI | `0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357` | 18 |
+| USDT | `0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0` | 6 |
+| LINK | `0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5` | 18 |
+| UNI | `0x4c4d5DFF92B35Df3293c46ACdf58FE0674940b64` | 18 |
+
+## Key Files
+
+- [`src/tools.ts`](./src/tools.ts) - Tool implementations (596 lines)
+- [`src/server.ts`](./src/server.ts) - MCP server configuration
+- [`src/index.ts`](./src/index.ts) - Worker entrypoint
+- [`src/resources.ts`](./src/resources.ts) - MCP resources
+- [`src/prompts.ts`](./src/prompts.ts) - MCP prompts
+
+## How It Works
+
+### Balance Checking
 
 ```typescript
-export function setupServerTools(server: McpServer) {
-  server.tool(
-    'tool_name',           // Name of the tool
-    'Tool description',    // Description
-    {                      // Parameters schema using zod
-      param1: z.string().describe('Parameter description'),
-    },       
-    async ({ param1 }) => {
-      // Tool implementation
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Result: ${param1}`
-          }
-        ]
-      };
+// 1. Check ETH balance
+const ethBalance = await fetch(RPC_URL, {
+  method: 'POST',
+  body: JSON.stringify({
+    method: 'eth_getBalance',
+    params: [walletAddress, 'latest']
+  })
+});
+
+// 2. For each token, call balanceOf()
+const tokenBalance = await fetch(RPC_URL, {
+  method: 'POST',
+  body: JSON.stringify({
+    method: 'eth_call',
+    params: [{
+      to: tokenAddress,
+      data: '0x70a08231' + walletAddress.slice(2).padStart(64, '0')
+    }, 'latest']
+  })
+});
+```
+
+### Transaction Preparation
+
+```typescript
+// 1. Call Intent Parser
+const response = await fetch('http://localhost:54082/agent/chat', {
+  method: 'POST',
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: query }]
+  })
+});
+
+// 2. Parse streaming response
+const agentResponse = JSON.parse(streamedData);
+
+// 3. Replace placeholders
+const processedArgs = replacePlaceholders(
+  agentResponse.args,
+  userAddress
+);
+
+// 4. Get contract & ABI
+const contractAddress = CONTRACT_ADDRESSES[agentResponse.contract_key];
+const abi = getABI(agentResponse.contract_key, agentResponse.function_name);
+
+// 5. Check approval
+if (needsApproval) {
+  approvalTransaction = {
+    contract_address: approvalToken,
+    function_name: "approve",
+    args: [contractAddress, approvalAmount],
+    abi: ERC20_ABI
+  };
+}
+```
+
+## Adding New Contracts
+
+1. **Add contract address:**
+```typescript
+// src/tools.ts
+const CONTRACT_ADDRESSES = {
+  UNISWAP_ROUTER: "0xC532a...",
+  NFT_DROP: "0x12f8e...",
+  YOUR_CONTRACT: "0xYourAddress"  // Add here
+};
+```
+
+2. **Add ABI:**
+```typescript
+const YOUR_CONTRACT_ABI = [
+  {
+    inputs: [...],
+    name: "yourFunction",
+    outputs: [...],
+    stateMutability: "nonpayable",
+    type: "function"
+  }
+] as const;
+```
+
+3. **Update getABI function:**
+```typescript
+function getABI(contractKey: string): any[] {
+  switch (contractKey) {
+    case "YOUR_CONTRACT":
+      return [...YOUR_CONTRACT_ABI];
+    // ...
+  }
+}
+```
+
+4. **Update Intent Parser** to recognize your contract
+
+## Testing
+
+### Using MCP Inspector
+
+1. Start dev server: `pnpm dev`
+2. Open http://localhost:6274
+3. Select tool to test
+4. Enter parameters
+5. View response
+
+### Manual Testing
+
+```bash
+# Test balance check
+curl -X POST http://localhost:8787/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+      "name": "check_wallet_balance",
+      "arguments": {
+        "walletAddress": "0x1234...",
+        "tokens": ["WETH", "USDC"]
+      }
     }
-  );
-}
+  }'
 ```
 
-2. **Resources** (`src/resources.ts`): Define persistent resources clients can access
+## Deployment
+
+```bash
+# Deploy to Cloudflare Workers
+pnpm deploy
+```
+
+## Configuration
+
+Edit [`wrangler.jsonc`](./wrangler.jsonc):
+- Service name
+- Durable Object bindings
+- Environment variables
+- Route patterns
+
+## Integration
+
+### Using in an AI Agent
 
 ```typescript
-export function setupServerResources(server: McpServer) {
-  server.resource(
-    'resource_name',
-    'resource://path/{id}',
-    async (uri: URL) => {
-      // Resource implementation
-      return {
-        contents: [
-          {
-            text: `Resource data`,
-            uri: uri.href
-          }
-        ]
-      };
+import { ToolboxService } from '@nullshot/agent';
+import mcpConfig from './mcp.json';
+
+// In your agent constructor
+super(state, env, model, [
+  new ToolboxService(env, mcpConfig)
+]);
+
+// Tools are automatically available to the AI
+```
+
+### MCP Config
+
+Add to your agent's `mcp.json`:
+```json
+{
+  "mcpServers": {
+    "protocol-pal-mcp": {
+      "source": "github:yourorg/protocol-pal",
+      "path": "/agent/mcp"
     }
-  );
+  }
 }
 ```
 
-3. **Prompts** (`src/prompts.ts`): Define prompt templates
+## Related Components
 
-```typescript
-export function setupServerPrompts(server: McpServer) {
-  server.prompt(
-    'prompt_name',
-    'Prompt description',
-    () => ({
-      messages: [{
-        role: 'assistant',
-        content: {
-          type: 'text',
-          text: `Your prompt text here`
-        }
-      }]
-    })
-  );
-}
-```
+- **Intent Parser** ([`../../intent-parser-agent`](../../intent-parser-agent)) - Parses natural language
+- **Chat Agent** ([`../`](../)) - Uses these tools
+- **Frontend** ([`../../frontend`](../../frontend)) - Executes transactions
 
-### Examples
+## Troubleshooting
 
-* [CRUD MCP Example](https://github.com/null-shot/typescript-agent-framework/tree/main/examples/crud-mcp) - Leverage D1 Database
-* [Expense MCP Example](https://github.com/null-shot/typescript-agent-framework/tree/main/examples/expense-mcp) - Leveraging Workflows
-* [Dependent Agent](https://github.com/null-shot/typescript-agent-framework/tree/main/examples/dependent-agent) - AI Agent with MCP dependencies
+### "Failed to connect to IntentParserAgent"
+- Ensure Intent Parser is running on port 54082
+- Check `INTENT_PARSER_AGENT_URL` in tools.ts
 
-## Related Resources
+### Balance returns 0
+- Verify wallet has funds on Sepolia
+- Check RPC URL is correct
+- Ensure token address is correct
 
-### Core Packages
+### Transaction approval not detected
+- Check `requires_approval` field in Intent Parser response
+- Verify token address is in approval_token field
 
-- [MCP Package](https://github.com/xava-labs/typescript-agent-framework/tree/main/packages/mcp): The core MCP implementation with advanced features and testing utilities
-- [TypeScript Agent Framework](https://github.com/xava-labs/typescript-agent-framework): Build intelligent agents powered by LLMs with the Agent Framework
+## Contributing
 
-### Docs
-
-- [Overview](https://nullshot.ai/en/docs/developers/mcp-framework/overview)
-- [Getting Started Guide](https://nullshot.ai/en/docs/developers/mcp-framework/getting-started)
-- [Integration Testing](https://nullshot.ai/en/docs/developers/mcp-framework/integration-testing)
-
-### Community
-
-Join our community to get help, share ideas, and contribute to the project:
-
-- [Discord](https://discord.gg/acwpp6zWEc): Join the `#typescript-framework` channel for feature requests, support, and discussions
-
-### Contributing
-
-We welcome contributions to improve this template! Here's how you can contribute:
-
-1. **Fork the repository**: Create a fork to make your changes
-
-2. **Create a branch**: Make your changes in a new branch
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Commit your changes**: Make meaningful commits
-   ```bash
-   git commit -m "Add feature: brief description"
-   ```
-
-4. **Push to your fork**: Push your changes to your fork
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-5. **Create a pull request**: Open a PR with a detailed description of your changes
-
-### Pull Request Guidelines
-
-- Provide a clear, descriptive title for your PR
-- Include a detailed description of what your PR does
-- Reference any related issues
-- Include screenshots or examples if applicable
-- Ensure all tests pass
-- Keep PRs focused on a single feature or fix
-
-For larger changes or features, we recommend discussing them first in our Discord channel to ensure alignment with the project direction.
-
-Or use the Deploy to Cloudflare button above to deploy directly from GitHub.
+Built for the Nullshot hackathon. PRs welcome!
 
 ## License
 
-[MIT](LICENSE)
+MIT

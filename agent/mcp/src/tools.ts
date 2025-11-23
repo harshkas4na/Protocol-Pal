@@ -4,162 +4,162 @@ import { z } from 'zod';
 
 export function setupServerTools(server: McpServer) {
   // Configuration for the IntentParserAgent endpoint
-const INTENT_PARSER_AGENT_URL = 'http://localhost:56967/agent/chat';
-const REQUEST_TIMEOUT_MS = 30000;
+  const INTENT_PARSER_AGENT_URL = 'http://localhost:54082/agent/chat';
+  const REQUEST_TIMEOUT_MS = 30000;
 
-// Sepolia RPC endpoint
-const SEPOLIA_RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/demo";
+  // Sepolia RPC endpoint
+  const SEPOLIA_RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/demo";
 
-// --- Contract ABIs ---
-const ERC20_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "spender", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
+  // --- Contract ABIs ---
+  const ERC20_ABI = [
+    {
+      inputs: [
+        { internalType: "address", name: "spender", type: "address" },
+        { internalType: "uint256", name: "amount", type: "uint256" },
+      ],
+      name: "approve",
+      outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ] as const;
 
-const UNISWAP_ABI = [
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountOutMin", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" },
-      { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactETHForTokens",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountIn", type: "uint256" },
-      { internalType: "uint256", name: "amountOutMin", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" },
-      { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactTokensForETH",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountIn", type: "uint256" },
-      { internalType: "uint256", name: "amountOutMin", type: "uint256" },
-      { internalType: "address[]", name: "path", type: "address[]" },
-      { internalType: "address", name: "to", type: "address" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-    ],
-    name: "swapExactTokensForTokens",
-    outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-] as const;
+  const UNISWAP_ABI = [
+    {
+      inputs: [
+        { internalType: "uint256", name: "amountOutMin", type: "uint256" },
+        { internalType: "address[]", name: "path", type: "address[]" },
+        { internalType: "address", name: "to", type: "address" },
+        { internalType: "uint256", name: "deadline", type: "uint256" },
+      ],
+      name: "swapExactETHForTokens",
+      outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
+      stateMutability: "payable",
+      type: "function",
+    },
+    {
+      inputs: [
+        { internalType: "uint256", name: "amountIn", type: "uint256" },
+        { internalType: "uint256", name: "amountOutMin", type: "uint256" },
+        { internalType: "address[]", name: "path", type: "address[]" },
+        { internalType: "address", name: "to", type: "address" },
+        { internalType: "uint256", name: "deadline", type: "uint256" },
+      ],
+      name: "swapExactTokensForETH",
+      outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        { internalType: "uint256", name: "amountIn", type: "uint256" },
+        { internalType: "uint256", name: "amountOutMin", type: "uint256" },
+        { internalType: "address[]", name: "path", type: "address[]" },
+        { internalType: "address", name: "to", type: "address" },
+        { internalType: "uint256", name: "deadline", type: "uint256" },
+      ],
+      name: "swapExactTokensForTokens",
+      outputs: [{ internalType: "uint256[]", name: "amounts", type: "uint256[]" }],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ] as const;
 
-const NFT_DROP_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "_receiver", type: "address" },
-      { internalType: "uint256", name: "_quantity", type: "uint256" },
-      { internalType: "address", name: "_currency", type: "address" },
-      { internalType: "uint256", name: "_pricePerToken", type: "uint256" },
-      {
-        components: [
-          { internalType: "bytes32[]", name: "proof", type: "bytes32[]" },
-          { internalType: "uint256", name: "quantityLimitPerWallet", type: "uint256" },
-          { internalType: "uint256", name: "pricePerToken", type: "uint256" },
-          { internalType: "address", name: "currency", type: "address" },
-        ],
-        internalType: "struct IClaimCondition.AllowlistProof",
-        name: "_allowlistProof",
-        type: "tuple",
-      },
-      { internalType: "bytes", name: "_data", type: "bytes" },
-    ],
-    name: "claim",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-] as const;
+  const NFT_DROP_ABI = [
+    {
+      inputs: [
+        { internalType: "address", name: "_receiver", type: "address" },
+        { internalType: "uint256", name: "_quantity", type: "uint256" },
+        { internalType: "address", name: "_currency", type: "address" },
+        { internalType: "uint256", name: "_pricePerToken", type: "uint256" },
+        {
+          components: [
+            { internalType: "bytes32[]", name: "proof", type: "bytes32[]" },
+            { internalType: "uint256", name: "quantityLimitPerWallet", type: "uint256" },
+            { internalType: "uint256", name: "pricePerToken", type: "uint256" },
+            { internalType: "address", name: "currency", type: "address" },
+          ],
+          internalType: "struct IClaimCondition.AllowlistProof",
+          name: "_allowlistProof",
+          type: "tuple",
+        },
+        { internalType: "bytes", name: "_data", type: "bytes" },
+      ],
+      name: "claim",
+      outputs: [],
+      stateMutability: "payable",
+      type: "function",
+    },
+  ] as const;
 
-// Contract addresses
-const CONTRACT_ADDRESSES = {
-  UNISWAP_ROUTER: "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008",
-  NFT_DROP: "0x12f8e37677b8934FE4F21E1fE87e18152408e77d"
-};
+  // Contract addresses
+  const CONTRACT_ADDRESSES = {
+    UNISWAP_ROUTER: "0xC532a74256D3Db42D0Bf7a0400fEFDbad7694008",
+    NFT_DROP: "0x12f8e37677b8934FE4F21E1fE87e18152408e77d"
+  };
 
-// Token addresses on Sepolia
-const TOKEN_ADDRESSES = {
-  WETH: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
-  USDC: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
-  DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
-  USDT: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
-  LINK: "0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5",
-  UNI: "0x4c4d5DFF92B35Df3293c46ACdf58FE0674940b64"
-};
+  // Token addresses on Sepolia
+  const TOKEN_ADDRESSES = {
+    WETH: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+    USDC: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
+    DAI: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
+    USDT: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
+    LINK: "0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5",
+    UNI: "0x4c4d5DFF92B35Df3293c46ACdf58FE0674940b64"
+  };
 
-/**
- * Replace placeholder values in args with actual values
- */
-function replacePlaceholders(args: any[], userAddress: string): any[] {
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const deadlineTimestamp = currentTimestamp + 600; // 10 minutes from now
+  /**
+   * Replace placeholder values in args with actual values
+   */
+  function replacePlaceholders(args: any[], userAddress: string): any[] {
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const deadlineTimestamp = currentTimestamp + 600; // 10 minutes from now
 
-  return args.map(arg => {
-    if (arg === "[USER_WALLET_ADDRESS]") {
-      return userAddress;
-    }
-    if (arg === "[CURRENT_TIMESTAMP_PLUS_600S]") {
-      return deadlineTimestamp;
-    }
-    // Handle nested arrays (like the path array in swaps)
-    if (Array.isArray(arg)) {
-      return replacePlaceholders(arg, userAddress);
-    }
-    // Handle nested objects (like allowlist proofs)
-    if (typeof arg === 'object' && arg !== null) {
-      const newObj: any = {};
-      for (const key in arg) {
-        newObj[key] = arg[key] === "[USER_WALLET_ADDRESS]" 
-          ? userAddress 
-          : arg[key] === "[CURRENT_TIMESTAMP_PLUS_600S]"
-          ? deadlineTimestamp
-          : arg[key];
+    return args.map(arg => {
+      if (arg === "[USER_WALLET_ADDRESS]") {
+        return userAddress;
       }
-      return newObj;
-    }
-    return arg;
-  });
-}
-
-/**
- * Get the appropriate ABI for the contract
- */
-function getABI(contractKey: string, functionName?: string): any[] {
-  switch (contractKey) {
-    case "UNISWAP_ROUTER":
-      // If a specific function is requested, return only that function's ABI
-      if (functionName) {
-        const functionAbi = UNISWAP_ABI.find(item => item.name === functionName);
-        return functionAbi ? [functionAbi] : [...UNISWAP_ABI];
+      if (arg === "[CURRENT_TIMESTAMP_PLUS_600S]") {
+        return deadlineTimestamp;
       }
-      return [...UNISWAP_ABI];
-    case "NFT_DROP":
-      return [...NFT_DROP_ABI];
-    default:
-      throw new Error(`Unknown contract key: ${contractKey}`);
+      // Handle nested arrays (like the path array in swaps)
+      if (Array.isArray(arg)) {
+        return replacePlaceholders(arg, userAddress);
+      }
+      // Handle nested objects (like allowlist proofs)
+      if (typeof arg === 'object' && arg !== null) {
+        const newObj: any = {};
+        for (const key in arg) {
+          newObj[key] = arg[key] === "[USER_WALLET_ADDRESS]"
+            ? userAddress
+            : arg[key] === "[CURRENT_TIMESTAMP_PLUS_600S]"
+              ? deadlineTimestamp
+              : arg[key];
+        }
+        return newObj;
+      }
+      return arg;
+    });
   }
-}
+
+  /**
+   * Get the appropriate ABI for the contract
+   */
+  function getABI(contractKey: string, functionName?: string): any[] {
+    switch (contractKey) {
+      case "UNISWAP_ROUTER":
+        // If a specific function is requested, return only that function's ABI
+        if (functionName) {
+          const functionAbi = UNISWAP_ABI.find(item => item.name === functionName);
+          return functionAbi ? [functionAbi] : [...UNISWAP_ABI];
+        }
+        return [...UNISWAP_ABI];
+      case "NFT_DROP":
+        return [...NFT_DROP_ABI];
+      default:
+        throw new Error(`Unknown contract key: ${contractKey}`);
+    }
+  }
 
   // ===================================
   // TOOL 1: Check Wallet Balance
@@ -177,10 +177,10 @@ function getABI(contractKey: string, functionName?: string): any[] {
     },
     async ({ walletAddress, tokens }) => {
       console.log(`[BalanceTool] Checking balances for ${walletAddress}`);
-      
+
       const tokensToCheck = tokens || ['WETH', 'USDC', 'DAI', 'USDT', 'LINK', 'UNI'];
       const balances: any = {};
-      
+
       try {
         // 1. Check native ETH balance
         const ethBalanceResponse = await fetch(SEPOLIA_RPC_URL, {
@@ -193,7 +193,7 @@ function getABI(contractKey: string, functionName?: string): any[] {
             id: 1
           })
         });
-        
+
         const ethBalanceData: unknown = await ethBalanceResponse.json();
 
         if (
@@ -212,20 +212,20 @@ function getABI(contractKey: string, functionName?: string): any[] {
           };
           console.log(`[BalanceTool] ETH Balance: ${ethBalance.toFixed(6)}`);
         }
-        
+
         // 2. Check ERC20 token balances
         for (const tokenSymbol of tokensToCheck) {
           const tokenAddress = TOKEN_ADDRESSES[tokenSymbol as keyof typeof TOKEN_ADDRESSES];
-          
+
           if (!tokenAddress) {
             console.warn(`[BalanceTool] Unknown token: ${tokenSymbol}`);
             continue;
           }
-          
+
           try {
             // Encode balanceOf(address) call: 0x70a08231 + padded address
             const balanceOfData = '0x70a08231' + walletAddress.slice(2).padStart(64, '0');
-            
+
             // Call balanceOf
             const balanceResponse = await fetch(SEPOLIA_RPC_URL, {
               method: 'POST',
@@ -240,7 +240,7 @@ function getABI(contractKey: string, functionName?: string): any[] {
                 id: 2
               })
             });
-            
+
             const balanceData: unknown = await balanceResponse.json();
 
             if (
@@ -283,7 +283,7 @@ function getABI(contractKey: string, functionName?: string): any[] {
                 decimals: decimals,
                 address: tokenAddress
               };
-              
+
               console.log(`[BalanceTool] ${tokenSymbol} Balance: ${balance.toFixed(decimals === 6 ? 2 : 6)}`);
             } else {
               balances[tokenSymbol] = {
@@ -303,13 +303,13 @@ function getABI(contractKey: string, functionName?: string): any[] {
             };
           }
         }
-        
+
         // Format response message
         let responseText = `Wallet Balance for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}\n\n`;
         responseText += `Native ETH:\n`;
         responseText += `• ${balances.ETH.balance} ETH\n\n`;
         responseText += `ERC20 Tokens:\n`;
-        
+
         for (const token of tokensToCheck) {
           if (balances[token] && !balances[token].error) {
             responseText += `• ${balances[token].balance} ${token}\n`;
@@ -317,9 +317,9 @@ function getABI(contractKey: string, functionName?: string): any[] {
             responseText += `• ${token}: Error fetching balance\n`;
           }
         }
-        
+
         responseText += `\nNetwork: Sepolia Testnet`;
-        
+
         return {
           content: [{
             type: "text",
@@ -330,7 +330,7 @@ function getABI(contractKey: string, functionName?: string): any[] {
           network: 'sepolia',
           timestamp: new Date().toISOString()
         };
-        
+
       } catch (error) {
         console.error('[BalanceTool] Error:', error);
         return {
@@ -360,19 +360,19 @@ function getABI(contractKey: string, functionName?: string): any[] {
     },
     async ({ query, userAddress }) => {
       const startTime = Date.now();
-      
+
       console.log(`[Web3ToolProvider] Received request: "${query}" for ${userAddress}`);
 
       try {
         // === STEP 1: Call IntentParserAgent Microservice ===
         console.log(`[Web3ToolProvider] Delegating to IntentParserAgent at ${INTENT_PARSER_AGENT_URL}...`);
-        
+
         // Create abort controller for timeout
         const abortController = new AbortController();
         const timeoutId = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS);
 
         let response: Response;
-        
+
         try {
           response = await fetch(INTENT_PARSER_AGENT_URL, {
             method: 'POST',
@@ -392,11 +392,11 @@ function getABI(contractKey: string, functionName?: string): any[] {
           });
         } catch (fetchError) {
           clearTimeout(timeoutId);
-          
+
           if (fetchError instanceof Error && fetchError.name === 'AbortError') {
             throw new Error(`Request to IntentParserAgent timed out after ${REQUEST_TIMEOUT_MS}ms`);
           }
-          
+
           throw new Error(`Failed to connect to IntentParserAgent: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
         }
 
@@ -442,12 +442,12 @@ function getABI(contractKey: string, functionName?: string): any[] {
             .replace(/```json/g, "")
             .replace(/```/g, "")
             .trim();
-          
+
           console.log('[Web3ToolProvider] Cleaned JSON string:', jsonString);
-          
+
           agentResponse = JSON.parse(jsonString);
           console.log('[Web3ToolProvider] Parsed agent response:', JSON.stringify(agentResponse, null, 2));
-          
+
           // Log specifically if approval fields are present
           if (agentResponse.requires_approval !== undefined) {
             console.log('[Web3ToolProvider] ✓ Approval fields detected:', {
@@ -498,37 +498,37 @@ function getABI(contractKey: string, functionName?: string): any[] {
 
         // === STEP 8: Check if Approval is Needed ===
         let approvalTransaction = null;
-        
+
         // Check if the agent explicitly said approval is needed
         const needsApproval = agentResponse.requires_approval === true;
-        
+
         // OR detect based on function name (fallback if agent doesn't specify)
-        const isTokenSwap = agentResponse.function_name === "swapExactTokensForETH" || 
-                           agentResponse.function_name === "swapExactTokensForTokens";
-        
+        const isTokenSwap = agentResponse.function_name === "swapExactTokensForETH" ||
+          agentResponse.function_name === "swapExactTokensForTokens";
+
         if (needsApproval || isTokenSwap) {
           console.log('[Web3ToolProvider] Approval required detected');
-          
+
           // Get approval token and amount
           let approvalToken = agentResponse.approval_token;
           let approvalAmount = agentResponse.approval_amount;
-          
+
           // Fallback: extract from args if not explicitly provided
           if (!approvalToken || !approvalAmount) {
             console.log('[Web3ToolProvider] Approval fields missing, extracting from args...');
-            
+
             // For token swaps, first arg is amountIn and first element in path is the input token
             if (processedArgs.length >= 3 && Array.isArray(processedArgs[2])) {
               approvalAmount = processedArgs[0].toString(); // amountIn
               approvalToken = processedArgs[2][0]; // First token in path
-              
+
               console.log('[Web3ToolProvider] Extracted approval info:', {
                 token: approvalToken,
                 amount: approvalAmount
               });
             }
           }
-          
+
           if (approvalToken && approvalAmount) {
             approvalTransaction = {
               contract_address: approvalToken,
@@ -537,7 +537,7 @@ function getABI(contractKey: string, functionName?: string): any[] {
               value: "0.0",
               abi: [...ERC20_ABI]
             };
-            
+
             console.log('[Web3ToolProvider] Approval transaction prepared:', JSON.stringify(approvalTransaction, null, 2));
           } else {
             console.warn('[Web3ToolProvider] Could not determine approval parameters');
@@ -579,9 +579,9 @@ function getABI(contractKey: string, functionName?: string): any[] {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         const processingTime = Date.now() - startTime;
-        
+
         console.error(`[Web3ToolProvider] ✗ Error after ${processingTime}ms:`, errorMessage);
-        
+
         // Return user-friendly error response
         return {
           content: [{

@@ -12,8 +12,8 @@ import { sepolia } from "thirdweb/chains"
 import { prepareTransaction } from "thirdweb"
 import { ethers } from "ethers"
 
-const client = createThirdwebClient({ 
-  clientId: "1353c50f8dafe774715b8df7c412f2e2" 
+const client = createThirdwebClient({
+  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "1353c50f8dafe774715b8df7c412f2e2"
 })
 
 interface Message {
@@ -26,6 +26,7 @@ interface Message {
   requiresApproval?: boolean
   approvalTransaction?: any
   displayMessage?: string
+  userAddress?: string | null
 }
 
 export default function ChatPage() {
@@ -66,7 +67,7 @@ export default function ChatPage() {
   const waitForTransactionConfirmation = async (txHash: string): Promise<void> => {
     const checkTransaction = async (): Promise<boolean> => {
       try {
-        const response = await fetch('https://eth-sepolia.g.alchemy.com/v2/cJIehF2H1TGkdVlz9iaSf', {
+        const response = await fetch(process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/cJIehF2H1TGkdVlz9iaSf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -76,9 +77,9 @@ export default function ChatPage() {
             id: 1
           })
         })
-        
+
         const data = await response.json()
-        
+
         if (data.result && data.result.status) {
           const status = parseInt(data.result.status, 16)
           if (status === 1) return true
@@ -89,10 +90,10 @@ export default function ChatPage() {
         return false
       }
     }
-    
+
     let attempts = 0
     const maxAttempts = 60
-    
+
     while (attempts < maxAttempts) {
       const confirmed = await checkTransaction()
       if (confirmed) return
@@ -107,7 +108,7 @@ export default function ChatPage() {
 
       // Handle simple transfer (data + to format)
       if (data !== undefined && to) {
-        const valueInWei = value && parseFloat(value) > 0 
+        const valueInWei = value && parseFloat(value) > 0
           ? BigInt(Math.floor(parseFloat(value) * 1e18))
           : BigInt(0)
 
@@ -140,7 +141,7 @@ export default function ChatPage() {
         const iface = new ethers.utils.Interface(abi)
         const encodedData = iface.encodeFunctionData(function_name, args || [])
 
-        const valueInWei = value && parseFloat(value) > 0 
+        const valueInWei = value && parseFloat(value) > 0
           ? BigInt(Math.floor(parseFloat(value) * 1e18))
           : BigInt(0)
 
@@ -184,9 +185,9 @@ export default function ChatPage() {
             timestamp: new Date(),
           },
         ])
-        
+
         const approvalHash = await executeTransaction(approvalTransaction, "Approval")
-        
+
         setMessages((prev) => [
           ...prev,
           {
@@ -196,9 +197,9 @@ export default function ChatPage() {
             timestamp: new Date(),
           },
         ])
-        
+
         await waitForTransactionConfirmation(approvalHash)
-        
+
         setMessages((prev) => [
           ...prev,
           {
@@ -208,12 +209,12 @@ export default function ChatPage() {
             timestamp: new Date(),
           },
         ])
-        
+
         await new Promise(resolve => setTimeout(resolve, 1000))
       }
-      
+
       const txHash = await executeTransaction(transactionData, "Transaction")
-      
+
       setMessages((prev) => [
         ...prev,
         {
@@ -223,10 +224,10 @@ export default function ChatPage() {
           timestamp: new Date(),
         },
       ])
-      
+
     } catch (error) {
       const errorMessage = (error as Error).message || "Unknown error"
-      
+
       setMessages((prev) => [
         ...prev,
         {
@@ -245,7 +246,7 @@ export default function ChatPage() {
     const functionName = txData.function_name || ''
     const contractKey = txData.contract_key || 'contract'
     const value = txData.value ? parseFloat(txData.value).toFixed(4) : '0'
-    
+
     let summary = {
       title: '',
       details: [] as string[],
@@ -296,12 +297,12 @@ export default function ChatPage() {
   const handleAgentResponse = async (fullMessage: string) => {
     // Try to find JSON in the message
     const jsonMatch = fullMessage.match(/\{[\s\S]*"type"\s*:\s*"contractCall"[\s\S]*\}/)
-    
+
     if (!jsonMatch) return
 
     try {
       const agentResponse = JSON.parse(jsonMatch[0])
-      
+
       if (agentResponse.type === "contractCall" && agentResponse.transaction) {
         const summary = generateSummary(
           agentResponse.transaction,
@@ -356,7 +357,7 @@ export default function ChatPage() {
         userAddress: account?.address || null,
       }
 
-      const response = await fetch("https://intent-parser-agent-iw3xyyes1-harshkasana05-gmailcoms-projects.vercel.app/agent/chat", {
+      const response = await fetch(process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:54237/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -399,7 +400,7 @@ export default function ChatPage() {
             }
           })
         }
-        
+
         // Process for transaction data after streaming is complete
         await handleAgentResponse(assistantMessage)
       }
@@ -483,7 +484,7 @@ export default function ChatPage() {
                 <p className="text-slate-400 text-sm mb-8">
                   {account?.address ? "Describe your transaction in natural language" : "Connect your wallet to get started"}
                 </p>
-                
+
                 {account?.address && (
                   <div className="space-y-2">
                     <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Try asking:</p>
@@ -504,31 +505,29 @@ export default function ChatPage() {
 
           {messages.map((message, index) => {
             const summary = message.isContractCall ? getTransactionSummary(message) : null
-            
+
             return (
               <div
                 key={message.id}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
-                style={{animationDelay: `${index * 0.05}s`}}
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="relative group max-w-[85%] md:max-w-[80%]">
-                  <div className={`rounded-2xl px-4 md:px-6 py-3 md:py-4 ${
-                    message.role === 'user'
-                      ? 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-lg'
-                      : 'bg-slate-800/60 text-slate-100 border border-slate-700'
-                  }`}>
+                  <div className={`rounded-2xl px-4 md:px-6 py-3 md:py-4 ${message.role === 'user'
+                    ? 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white shadow-lg'
+                    : 'bg-slate-800/60 text-slate-100 border border-slate-700'
+                    }`}>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                       {message.displayMessage || message.content}
                     </p>
-                    
+
                     {message.isContractCall && message.transactionData && summary && (
                       <div className="mt-4 p-4 bg-slate-900/80 rounded-xl border border-slate-700/50 space-y-3">
                         <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            summary.icon === 'swap' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' :
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${summary.icon === 'swap' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' :
                             summary.icon === 'mint' ? 'bg-gradient-to-br from-pink-500 to-rose-600' :
-                            'bg-gradient-to-br from-blue-500 to-cyan-600'
-                          }`}>
+                              'bg-gradient-to-br from-blue-500 to-cyan-600'
+                            }`}>
                             {summary.icon === 'swap' ? <ArrowRightLeft size={20} className="text-white" /> : <Coins size={20} className="text-white" />}
                           </div>
                           <div className="flex-1">
@@ -540,14 +539,14 @@ export default function ChatPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         {message.requiresApproval && (
                           <div className="flex items-start gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                             <Clock size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
                             <p className="text-xs text-amber-300">2 transactions required: approval + execution</p>
                           </div>
                         )}
-                        
+
                         <Button
                           onClick={() => executeContractCall(message.transactionData, message.approvalTransaction)}
                           disabled={isPreparing || !account?.address}
@@ -560,10 +559,9 @@ export default function ChatPage() {
                       </div>
                     )}
                   </div>
-                  
-                  <div className={`flex items-center gap-2 mt-2 text-xs text-slate-500 ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}>
+
+                  <div className={`flex items-center gap-2 mt-2 text-xs text-slate-500 ${message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}>
                     <span>{message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                     {message.role === 'assistant' && (
                       <button onClick={() => handleCopy(message.content, message.id)} className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-400">
