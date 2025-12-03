@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export function setupServerTools(server: McpServer) {
   // Configuration for the IntentParserAgent endpoint
-  const INTENT_PARSER_AGENT_URL = 'http://localhost:54082/agent/chat';
+  const INTENT_PARSER_AGENT_URL = 'https://mcp-agent-deployed-staging.bookname05.workers.dev/agent/chat';
   const REQUEST_TIMEOUT_MS = 30000;
 
   // Sepolia RPC endpoint
@@ -549,11 +549,10 @@ export function setupServerTools(server: McpServer) {
         const processingTime = Date.now() - startTime;
         console.log(`[Web3ToolProvider] ✓ Successfully processed request in ${processingTime}ms`);
 
-        // === STEP 9: Return Complete Transaction Data with ABI ===
-        const completeResponse = {
-          success: true,
-          requiresApproval: !!approvalTransaction,
-          approvalTransaction: approvalTransaction,
+        // === STEP 9: Return Frontend-Ready Transaction Data ===
+        const frontendResponse = {
+          type: "contractCall",
+          message: "I've prepared your transaction. Please review and confirm:",
           transaction: {
             contract_key: agentResponse.contract_key,
             contract_address: contractAddress,
@@ -562,17 +561,16 @@ export function setupServerTools(server: McpServer) {
             value: agentResponse.value,
             abi: abi
           },
-          userAddress: userAddress,
-          processingTimeMs: processingTime,
-          timestamp: new Date().toISOString()
+          requiresApproval: !!approvalTransaction,
+          approvalTransaction: approvalTransaction
         };
 
-        console.log('[Web3ToolProvider] Final response:', JSON.stringify(completeResponse, null, 2));
+        console.log('[Web3ToolProvider] Frontend-ready response:', JSON.stringify(frontendResponse, null, 2));
 
         return {
           content: [{
             type: "text",
-            text: JSON.stringify(completeResponse, null, 2)
+            text: JSON.stringify(frontendResponse, null, 2)
           }]
         };
 

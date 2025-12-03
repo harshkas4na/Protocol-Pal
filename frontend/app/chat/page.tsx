@@ -357,7 +357,7 @@ export default function ChatPage() {
         userAddress: account?.address || null,
       }
 
-      const response = await fetch(process.env.NEXT_PUBLIC_AGENT_URL || "http://localhost:54237/agent/chat", {
+      const response = await fetch("https://ai-mcp-staging.bookname05.workers.dev/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -473,12 +473,12 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Deployment Status Disclaimer */}
+        {/* Deployment Status Disclaimer
         <div className="px-4 md:px-6 py-2 bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-sm">
           <p className="text-xs text-amber-200/80 text-center font-medium">
             ⚠️ Note: The live demo agent is currently offline due to pending backend deployment. Please run locally for full functionality.
           </p>
-        </div>
+        </div> */}
 
         {/* Messages Area */}
         <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6 space-y-6 scroll-smooth">

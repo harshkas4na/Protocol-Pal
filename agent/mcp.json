@@ -1,7 +1,7 @@
 {
 	"mcpServers": {
 		"mcp": {
-			"url": "http://localhost:8787/sse"
+			"url": "https://mcp.bookname05.workers.dev/sse"
 		}
 	}
 }

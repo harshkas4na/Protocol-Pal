@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { ToolboxService } from '@nullshot/agent';
-import { 
-  stepCountIs, 
-  type LanguageModel, 
+import {
+  stepCountIs,
+  type LanguageModel,
   type Provider,
 } from 'ai';
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { AiSdkAgent, AIUISDKMessage, type MCPConfig} from '@nullshot/agent';
+import { AiSdkAgent, AIUISDKMessage, type MCPConfig } from '@nullshot/agent';
 import mcpConfig from '../mcp.json'
 
 // --- Enhanced Protocol Pal System Prompt ---
@@ -27,6 +27,14 @@ For swaps that DON'T need approval (ETH to Token):
 
 For swaps that NEED approval (Token to ETH(swapExactTokenToETH) or Token to Token(swapExactTokenToToken)):
 { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "functionName", "args": [...], "value": "0.0", "requires_approval": true, "approval_token": "TOKEN_ADDRESS", "approval_amount": "AMOUNT_IN_SMALLEST_UNIT" }
+
+CRITICAL RULES FOR "value" FIELD:
+- The "value" field represents the amount of native ETH to send with the transaction.
+- ALWAYS return the value in DECIMAL ETH (e.g., "0.01", "0.5", "1.0").
+- NEVER return the value in Wei (e.g., do NOT return "10000000000000000").
+- If the user says "0.01 ETH", value must be "0.01".
+- If the user says "1 ETH", value must be "1.0".
+- For token-to-token swaps or token-to-ETH swaps, value must be "0.0".
 
 Knowledge Base
 
@@ -72,7 +80,7 @@ Rules for Args:
 - path: [WETH_ADDRESS, OUTPUT_TOKEN_ADDRESS] (e.g., [WETH, USDC])
 - to: Always use "[USER_WALLET_ADDRESS]"
 - deadline: Always use "[CURRENT_TIMESTAMP_PLUS_600S]"
-- value: The amount of ETH being swapped (e.g., "0.01")
+- value: The amount of ETH being swapped (e.g., "0.01") - MUST BE IN ETH, NOT WEI
 
 2b. Swapping FROM a token to ETH (e.g., "swap 100 USDC for ETH")
 Function: "swapExactTokensForETH"
@@ -129,7 +137,7 @@ Amount Calculation:
 - For swapping FROM a token (not ETH), multiply the amount by 10^decimals
   Example: 100 USDC = 100 * 10^6 = 100000000
   Example: 1.5 DAI = 1.5 * 10^18 = 1500000000000000000
-- For swapping FROM ETH, use the amount as-is (e.g., "0.01")
+- For swapping FROM ETH, use the amount as-is (e.g., "0.01") - DO NOT CONVERT TO WEI
 
 Examples
 
@@ -140,16 +148,16 @@ User: "swap 0.05 eth for usdc"
 Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactETHForTokens", "args": [0, ["0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.05" }
 
 User: "swap 100 usdc for eth"
-Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForETH", "args": [100000000, 0, ["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0" }
+Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForETH", "args": [100000000, 0, ["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0", "requires_approval": true, "approval_token": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "approval_amount": "100000000" }
 
 User: "swap 50 usdc for dai"
-Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForTokens", "args": [50000000, 0, ["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x68194a729C2450ad26072b3D33ADaCbcef39D574"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0" }
+Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForTokens", "args": [50000000, 0, ["0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x68194a729C2450ad26072b3D33ADaCbcef39D574"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0", "requires_approval": true, "approval_token": "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8", "approval_amount": "50000000" }
 
 User: "trade 1.5 DAI for USDC"
-Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForTokens", "args": ["1500000000000000000", 0, ["0x68194a729C2450ad26072b3D33ADaCbcef39D574", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0" }
+Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactTokensForTokens", "args": ["1500000000000000000", 0, ["0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357", "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.0", "requires_approval": true, "approval_token": "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357", "approval_amount": "1500000000000000000" }
 
 User: "swap 0.1 eth to link"
-Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactETHForTokens", "args": [0, ["0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0x779877A7B0D9E8603169DdbD7836e478b4624789"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.1" }
+Output: { "action": "prepare_transaction", "contract_key": "UNISWAP_ROUTER", "function_name": "swapExactETHForTokens", "args": [0, ["0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9", "0xf8Fb3713D459D7C1018BD0A49D19b4C44290EBE5"], "[USER_WALLET_ADDRESS]", "[CURRENT_TIMESTAMP_PLUS_600S]"], "value": "0.1" }
 
 User: "swap tokens"
 Output: { "error": "Missing required information. Please specify which tokens and how much." }
@@ -160,27 +168,27 @@ Output: { "error": "Request is unclear, please be more specific." }`;
 // --- Hono App ---
 const app = new Hono<{ Bindings: Env }>();
 app.use(
-    '*',
-    cors({
-        origin: '*', 
-        allowMethods: ['POST', 'GET', 'OPTIONS'],
-        allowHeaders: ['Content-Type'],
-        exposeHeaders: ['X-Session-Id'],
-        maxAge: 86400,
-    }),
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+    exposeHeaders: ['X-Session-Id'],
+    maxAge: 86400,
+  }),
 );
 app.all('/agent/chat/:sessionId?', async (c) => {
-    const { AGENT } = c.env;
-    var sessionIdStr = c.req.param('sessionId');
-    if (!sessionIdStr || sessionIdStr == '') {
-        sessionIdStr = crypto.randomUUID();
-    }
-    const id = AGENT.idFromName(sessionIdStr);
-    const forwardRequest = new Request('https://internal.com/agent/chat/' + sessionIdStr, {
-        method: c.req.method,
-        body: c.req.raw.body,
-    });
-    return await AGENT.get(id).fetch(forwardRequest);
+  const { AGENT } = c.env;
+  var sessionIdStr = c.req.param('sessionId');
+  if (!sessionIdStr || sessionIdStr == '') {
+    sessionIdStr = crypto.randomUUID();
+  }
+  const id = AGENT.idFromName(sessionIdStr);
+  const forwardRequest = new Request('https://internal.com/agent/chat/' + sessionIdStr, {
+    method: c.req.method,
+    body: c.req.raw.body,
+  });
+  return await AGENT.get(id).fetch(forwardRequest);
 });
 
 // --- Updated Agent Class ---
@@ -199,17 +207,17 @@ export class SimplePromptAgent extends AiSdkAgent<Env> {
       default:
         throw new Error(`Unsupported AI provider: ${env.AI_PROVIDER}`);
     }
-    
+
     super(state, env, model, [new ToolboxService(env, mcpConfig)]);
   }
 
   async processMessage(sessionId: string, messages: AIUISDKMessage): Promise<Response> {
     try {
       console.log('[Agent] Received messages:', JSON.stringify(messages, null, 2));
-      
+
       // Handle the case where messages might be structured differently
       let messageArray;
-      
+
       if (messages.messages && Array.isArray(messages.messages)) {
         // Standard format: { messages: [...] }
         messageArray = messages.messages;
@@ -242,12 +250,12 @@ export class SimplePromptAgent extends AiSdkAgent<Env> {
           },
         },
       );
-  
+
       return result.toTextStreamResponse();
-      
+
     } catch (error) {
       console.error('[Agent] Error processing message:', error);
-      
+
       // Return a proper error response
       return new Response(
         JSON.stringify({
@@ -266,7 +274,7 @@ export class SimplePromptAgent extends AiSdkAgent<Env> {
 
 // --- Default Export ---
 export default {
-    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-        return app.fetch(request, env, ctx);
-    },
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return app.fetch(request, env, ctx);
+  },
 };

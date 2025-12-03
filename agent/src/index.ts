@@ -1,40 +1,40 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { ToolboxService } from '@nullshot/agent';
-import { 
-  stepCountIs, 
-  type LanguageModel, 
+import {
+  stepCountIs,
+  type LanguageModel,
   type Provider,
 } from 'ai';
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { AiSdkAgent, AIUISDKMessage, type MCPConfig} from '@nullshot/agent';
+import { AiSdkAgent, AIUISDKMessage, type MCPConfig } from '@nullshot/agent';
 import mcpConfig from '../mcp.json'
 
 // --- Hono App ---
 const app = new Hono<{ Bindings: Env }>();
 app.use(
-    '*',
-    cors({
-        origin: '*', 
-        allowMethods: ['POST', 'GET', 'OPTIONS'],
-        allowHeaders: ['Content-Type'],
-        exposeHeaders: ['X-Session-Id'],
-        maxAge: 86400,
-    }),
+  '*',
+  cors({
+    origin: '*',
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+    exposeHeaders: ['X-Session-Id'],
+    maxAge: 86400,
+  }),
 );
 
 app.all('/agent/chat/:sessionId?', async (c) => {
-    const { AGENT } = c.env;
-    var sessionIdStr = c.req.param('sessionId');
-    if (!sessionIdStr || sessionIdStr == '') {
-        sessionIdStr = crypto.randomUUID();
-    }
-    const id = AGENT.idFromName(sessionIdStr);
-    const forwardRequest = new Request('https://internal.com/agent/chat/' + sessionIdStr, {
-        method: c.req.method,
-        body: c.req.raw.body,
-    });
-    return await AGENT.get(id).fetch(forwardRequest);
+  const { AGENT } = c.env;
+  var sessionIdStr = c.req.param('sessionId');
+  if (!sessionIdStr || sessionIdStr == '') {
+    sessionIdStr = crypto.randomUUID();
+  }
+  const id = AGENT.idFromName(sessionIdStr);
+  const forwardRequest = new Request('https://internal.com/agent/chat/' + sessionIdStr, {
+    method: c.req.method,
+    body: c.req.raw.body,
+  });
+  return await AGENT.get(id).fetch(forwardRequest);
 });
 
 // --- Chat Agent Class ---
@@ -53,19 +53,19 @@ export class SimplePromptAgent extends AiSdkAgent<Env> {
       default:
         throw new Error(`Unsupported AI provider: ${env.AI_PROVIDER}`);
     }
-    
+
     super(state, env, model, [new ToolboxService(env, mcpConfig)]);
-    
+
     console.log('[ChatAgent] Initialized with MCP config');
   }
 
   async processMessage(sessionId: string, messages: AIUISDKMessage): Promise<Response> {
     try {
       console.log('[ChatAgent] Received messages:', JSON.stringify(messages, null, 2));
-      
+
       // Handle the case where messages might be structured differently
       let messageArray;
-      
+
       if (messages.messages && Array.isArray(messages.messages)) {
         // Standard format: { messages: [...] }
         messageArray = messages.messages;
@@ -137,10 +137,10 @@ Examples of requests you should handle with the tool:
 
       // Return the streaming response
       return result.toTextStreamResponse();
-      
+
     } catch (error) {
       console.error('[ChatAgent] Error processing message:', error);
-      
+
       // Return a proper error response
       return new Response(
         JSON.stringify({
@@ -159,7 +159,7 @@ Examples of requests you should handle with the tool:
 
 // --- Default Export ---
 export default {
-    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-        return app.fetch(request, env, ctx);
-    },
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return app.fetch(request, env, ctx);
+  },
 };

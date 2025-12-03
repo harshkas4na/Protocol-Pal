@@ -4,9 +4,16 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "agent",
+  "name": "ai-mcp",
   "main": "src/index.ts",
-  "compatibility_date": "2025-06-01",
+  "compatibility_date": "2025-08-23",
+  "observability": {
+    "enabled": true
+  },
+  "keep_vars": true,
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "migrations": [
     {
       "tag": "v1",
@@ -23,22 +30,32 @@
       }
     ]
   },
-  "observability": {
-    "enabled": true
-  },
   "vars": {
     "AI_PROVIDER": "google",
     "MODEL_ID": "gemini-2.5-flash",
     "AI_PROVIDER_API_KEY": "AIzaSyCVZj3LkrA7PISrXQzrFbEvZG2rGSVk7Ec"
-
   },
-  "services": [
-    {
-      "binding": "MCP_SERVICE",
-      "service": "mcp"
+  "env": {
+    "staging": {
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "AGENT",
+            "class_name": "SimplePromptAgent"
+          }
+        ]
+      },
+      "services": [
+        {
+          "binding": "MCP_SERVICE",
+          "service": "mcp"
+        }
+      ],
+      "vars": {
+        "AI_PROVIDER": "google",
+        "MODEL_ID": "gemini-2.5-flash",
+        "AI_PROVIDER_API_KEY": "AIzaSyCVZj3LkrA7PISrXQzrFbEvZG2rGSVk7Ec"
+      },
     }
-  ],
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  },
 }
